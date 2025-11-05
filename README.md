@@ -115,16 +115,38 @@ El pipeline genera las siguientes 13 tablas en la carpeta `DW/`.
 * **Dimensiones (FKs):** `dim_customer` (puede ser NULO), `dim_channel`, `dim_date` (por `responded_at`).
 * **Medidas:** `score`.
 
-```
+
 ---
+
 ## 5. Estructura del Repositorio y Pipeline
 
 El proyecto sigue una arquitectura E-T-L (Extract, Transform, Load) modular, orquestada por `main.py`.
 
-mkt_tp_final/ ├── README.md ├── requirements.txt ├── .gitignore ├── main.py # (Orquestador E-T-L) │ ├── scripts/ # (Módulos del Pipeline) │ ├── extract.py # (Fase E: Lee CSVs de /raw) │ ├── transform.py # (Fase T: Cerebro. Aplica lógica y crea Dims/Facts) │ └── load.py # (Fase L: Guarda Dims/Facts en /DW) │ ├── raw/ # (Datos fuente - SOLO LECTURA) │ └── .csv │ ├── DW/ # (Data Warehouse - DATOS GENERADOS) │ ├── dim_.csv │ └── fact_*.csv │ ├── esquema_estrella/ # (Diagramas del Modelo) │ └── *.jpeg │ └── venv/ # (Entorno virtual - Ignorado por Git)
-
----
 ```
+.
+├── README.md
+├── requirements.txt
+├── .gitignore
+├── main.py               # (Orquestador E-T-L)
+│
+├── scripts/              # (Módulos del Pipeline)
+│   ├── extract.py        # (Fase E: Lee CSVs de /raw)
+│   ├── transform.py      # (Fase T: Cerebro. Aplica lógica y crea Dims/Facts)
+│   └── load.py           # (Fase L: Guarda Dims/Facts en /DW)
+│
+├── raw/                  # (Datos fuente - SOLO LECTURA)
+│   └── *.csv
+│
+├── DW/                   # (Data Warehouse - DATOS GENERADOS)
+│   ├── dim_*.csv
+│   └── fact_*.csv
+│
+├── esquema_estrella/     # (Diagramas del Modelo)
+│   └── *.jpeg
+│
+└── venv/                 # (Entorno virtual - Ignorado por Git)
+```
+
 
 ## 6. Instrucciones de Ejecución
 
