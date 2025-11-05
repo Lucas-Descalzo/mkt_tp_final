@@ -4,13 +4,9 @@ import pandas as pd
 
 def transform_all_data(raw_data):
     """
-    Toma los datos crudos y los transforma en un Esquema Estrella.
-    
-    Args:
-        raw_data (dict): Diccionario con los DataFrames crudos.
-
-    Returns:
-        dict: Diccionario con los DataFrames del Esquema Estrella (dims y facts).
+    Toma los datos crudos y los transforma en un Esquema Estrella "Puro".
+    Las Dims son descriptivas.
+    Las Facts solo contienen IDs (claves) y Medidas (números).
     """
     
     # --- 1. Creación de Dimensiones ---
@@ -18,35 +14,35 @@ def transform_all_data(raw_data):
     dim_channel = build_dim_channel(raw_data['channel'])
     dim_province = build_dim_province(raw_data['province'])
     dim_customer = build_dim_customer(raw_data['customer'])
-    dim_product = build_dim_product(raw_data['product'], raw_data.get('product_category'))
-    dim_store = build_dim_store(raw_data['store'], raw_data['address'], dim_province)
-    
-    # Crearemos una dim_location unificada para simplificar
     dim_location = build_dim_location(raw_data['address'], dim_province)
+    dim_product = build_dim_product(raw_data['product'], raw_data.get('product_category'))
+    dim_store = build_dim_store(raw_data['store'], dim_location)
+    dim_date = build_dim_date(raw_data) # Genera la dim de tiempo
 
     # --- 2. Creación de Hechos ---
-    # (Añadiremos las llamadas a los hechos aquí más adelante)
     print("      -> Creando Tablas de Hechos...")
-    fact_sales = build_fact_sales(raw_data['sales_order'], raw_data['sales_order_item'], dim_location)
-    fact_nps = build_fact_nps(raw_data['nps_response'])
-    fact_users = build_fact_users(raw_data['web_session'])
-
+    fact_sales_order = build_fact_sales_order(raw_data['sales_order'])
+    fact_sales_order_item = build_fact_sales_order_item(raw_data['sales_order_item'])
+    fact_payment = build_fact_payment(raw_data['payment'])
+    fact_shipment = build_fact_shipment(raw_data['shipment'])
+    fact_web_session = build_fact_web_session(raw_data['web_session'])
+    fact_nps_response = build_fact_nps(raw_data['nps_response'])
 
     # --- 3. Retorno del Esquema Estrella ---
     star_schema_tables = {
-        # Dimensiones
         "dim_channel": dim_channel,
         "dim_province": dim_province,
         "dim_customer": dim_customer,
+        "dim_location": dim_location,
         "dim_product": dim_product,
         "dim_store": dim_store,
-        "dim_location": dim_location,
-        
-        # Hechos
-        "fact_sales": fact_sales,
-        "fact_nps": fact_nps,
-        "fact_users": fact_users,
-        # (Añadiremos más hechos aquí)
+        "dim_date": dim_date,
+        "fact_sales_order": fact_sales_order,
+        "fact_sales_order_item": fact_sales_order_item,
+        "fact_payment": fact_payment,
+        "fact_shipment": fact_shipment,
+        "fact_web_session": fact_web_session,
+        "fact_nps_response": fact_nps_response
     }
     
     return star_schema_tables
@@ -59,51 +55,19 @@ def transform_all_data(raw_data):
 
 def build_dim_channel(df_channel):
     """Crea la dimensión Canal."""
-    dim_channel = df_channel.copy()
-    dim_channel = dim_channel.rename(columns={'name': 'channel_name'})
-    return dim_channel
+    return df_channel.copy()
 
 def build_dim_province(df_province):
     """Crea la dimensión Provincia."""
-    dim_province = df_province.copy()
-    dim_province = dim_province.rename(columns={'name': 'province_name'})
-    return dim_province
+    return df_province.copy()
 
 def build_dim_customer(df_customer):
     """Crea la dimensión Cliente."""
-    dim_customer = df_customer.copy()
-    # Limpieza: seleccionar y renombrar columnas clave
-    dim_customer = dim_customer[['customer_id', 'email', 'first_name', 'last_name', 'status', 'created_at']]
-    return dim_customer
-
-def build_dim_product(df_product, df_category):
-    """Crea la dimensión Producto, uniendo su categoría si existe."""
-    dim_product = df_product.copy()
-    
-    if df_category is not None:
-        # Unir con categorías
-        dim_product = pd.merge(
-            dim_product,
-            df_category,
-            on='category_id',
-            how='left',
-            suffixes=('_prod', '_cat')
-        )
-        # Renombrar 'name_cat' a 'category_name' y 'name_prod' a 'product_name'
-        dim_product = dim_product.rename(columns={'name_prod': 'product_name', 'name_cat': 'category_name'})
-    else:
-        # Si no hay categoría, solo renombrar el nombre del producto
-        dim_product = dim_product.rename(columns={'name': 'product_name'})
-
-    # Seleccionar columnas finales
-    cols_to_keep = ['product_id', 'sku', 'product_name', 'list_price', 'status', 'category_name']
-    # Filtramos solo las columnas que existen
-    dim_product = dim_product[[col for col in cols_to_keep if col in dim_product.columns]]
-    return dim_product
+    # Seleccionamos solo las columnas descriptivas
+    return df_customer[['customer_id', 'email', 'first_name', 'last_name', 'status', 'created_at']].copy()
 
 def build_dim_location(df_address, df_province):
     """Crea una dimensión de Localización unificada (Address + Province)."""
-    # Unimos address y province
     dim_location = pd.merge(
         df_address,
         df_province,
@@ -111,103 +75,116 @@ def build_dim_location(df_address, df_province):
         how='left',
         suffixes=('_addr', '_prov')
     )
-    # Renombramos
-    dim_location = dim_location.rename(columns={
-        'name': 'province_name',
-        'code': 'province_code'
-    })
-    # Seleccionamos columnas
-    dim_location = dim_location[[
-        'address_id', 'line1', 'line2', 'city', 'province_id', 'province_name', 
-        'province_code', 'postal_code', 'country_code'
-    ]]
-    return dim_location
+    # Seleccionamos y renombramos
+    dim_location = dim_location.rename(columns={'name': 'province_name', 'code': 'province_code'})
+    return dim_location[['address_id', 'line1', 'line2', 'city', 'province_id', 'province_name', 'province_code', 'postal_code', 'country_code']]
 
-def build_dim_store(df_store, df_address, df_province):
-    """Crea la dimensión Tienda, uniendo su dirección y provincia."""
-    # Unir tienda con la dimensión de localización que ya creamos
+def build_dim_product(df_product, df_category):
+    """Crea la dimensión Producto, uniendo su categoría si existe."""
+    dim_product = df_product.copy()
+    if df_category is not None:
+        dim_product = pd.merge(
+            dim_product,
+            df_category,
+            on='category_id',
+            how='left',
+            suffixes=('_prod', '_cat')
+        )
+        dim_product = dim_product.rename(columns={'name_prod': 'product_name', 'name_cat': 'category_name'})
+    else:
+        dim_product = dim_product.rename(columns={'name': 'product_name'})
+    
+    cols_to_keep = ['product_id', 'sku', 'product_name', 'list_price', 'status', 'category_id', 'category_name', 'parent_id']
+    return dim_product[[col for col in cols_to_keep if col in dim_product.columns]]
+
+def build_dim_store(df_store, dim_location):
+    """Crea la dimensión Tienda, uniendo su dirección (ya procesada)."""
     dim_store = pd.merge(
         df_store,
-        build_dim_location(df_address, df_province), # Reutilizamos la lógica
+        dim_location, # Usamos la dim_location que ya tiene la provincia
         on='address_id',
-        how='left'
+        how='left',
+        suffixes=('_store', '_loc')
     )
-    dim_store = dim_store.rename(columns={'name': 'store_name'})
-    return dim_store
+    return dim_store.rename(columns={'name': 'store_name'})
 
+def build_dim_date(raw_data):
+    """Crea una dimensión de Fecha (Calendario) a partir de todas las fechas del modelo."""
+    print("        -> Generando dim_date...")
+    # Recolectar todas las fechas de las tablas de hechos
+    dates = pd.concat([
+        pd.to_datetime(raw_data['sales_order']['order_date']),
+        pd.to_datetime(raw_data['payment']['paid_at']),
+        pd.to_datetime(raw_data['shipment']['shipped_at']),
+        pd.to_datetime(raw_data['shipment']['delivered_at']),
+        pd.to_datetime(raw_data['web_session']['started_at']),
+        pd.to_datetime(raw_data['web_session']['ended_at']),
+        pd.to_datetime(raw_data['nps_response']['responded_at'])
+    ]).dropna().unique()
+    
+    dim_date = pd.DataFrame(data={'date': pd.to_datetime(dates)})
+    dim_date = dim_date.drop_duplicates().sort_values(by='date')
+    
+    # Enriquecer la dimensión de fecha
+    dim_date['date_key'] = dim_date['date'].dt.strftime('%Y%m%d').astype(int)
+    dim_date['year'] = dim_date['date'].dt.year
+    dim_date['quarter'] = dim_date['date'].dt.quarter
+    dim_date['month'] = dim_date['date'].dt.month
+    dim_date['month_name'] = dim_date['date'].dt.month_name()
+    dim_date['day'] = dim_date['date'].dt.day
+    dim_date['day_of_week'] = dim_date['date'].dt.dayofweek
+    dim_date['day_name'] = dim_date['date'].dt.day_name()
+    dim_date['is_weekend'] = dim_date['day_of_week'].isin([5, 6])
+    
+    return dim_date.dropna(subset=['date'])
 
-# --- FACT BUILDERS (Simplificados para el Dashboard) ---
-# Estas tablas SÍ son las que alimentarán directamente el Dashboard.
-# Están denormalizadas (incluyen provincia, nombre de producto, etc.) 
-# para hacer los cálculos en Looker más fáciles.
+# --- FACT BUILDERS ---
+# Estas tablas solo contienen Claves (IDs) y Medidas (Números)
 
-def build_fact_sales(df_orders, df_items, dim_location):
-    """Crea la tabla de hechos de ventas, lista para el dashboard."""
-    
-    # 1. Filtrar solo ventas válidas
-    sales_status_filter = ['PAID', 'FULFILLED']
-    df_sales = df_orders[df_orders['status'].isin(sales_status_filter)].copy()
-
-    # 2. Unir con items para tener el detalle del producto
-    df_sales_fact = pd.merge(
-        df_sales,
-        df_items,
-        on='order_id',
-        how='left'
-    )
-    
-    # 3. Unir con dim_location para tener la provincia
-    df_sales_fact = pd.merge(
-        df_sales_fact,
-        dim_location[['address_id', 'province_name']],
-        left_on='shipping_address_id',
-        right_on='address_id',
-        how='left'
-    )
-    
-    # 4. Limpieza de columnas
-    df_sales_fact['order_date'] = pd.to_datetime(df_sales_fact['order_date']).dt.date
-    
-    # Seleccionamos las columnas necesarias para TODOS los KPIs de ventas
-    fact_columns = [
-        'order_id', 'order_date', 'channel_id', 'total_amount', 'province_name',
-        'product_id', 'quantity', 'line_total'
+def build_fact_sales_order(df_orders):
+    """Crea la tabla de hechos de Encabezado de Orden."""
+    # Seleccionar solo claves y medidas
+    fact_cols = [
+        'order_id', 'customer_id', 'channel_id', 'store_id', 
+        'billing_address_id', 'shipping_address_id', 'order_date',
+        'subtotal', 'tax_amount', 'shipping_fee', 'total_amount', 'status'
     ]
-    df_sales_fact = df_sales_fact[fact_columns]
-    
-    return df_sales_fact
+    return df_orders[fact_cols].copy()
+
+def build_fact_sales_order_item(df_items):
+    """Crea la tabla de hechos de Ítems de Orden."""
+    # Seleccionar solo claves y medidas
+    fact_cols = [
+        'order_item_id', 'order_id', 'product_id', 
+        'quantity', 'unit_price', 'discount_amount', 'line_total'
+    ]
+    return df_items[fact_cols].copy()
+
+def build_fact_payment(df_payment):
+    """Crea la tabla de hechos de Pagos."""
+    fact_cols = [
+        'payment_id', 'order_id', 'method', 'status', 'amount', 'paid_at'
+    ]
+    return df_payment[fact_cols].copy()
+
+def build_fact_shipment(df_shipment):
+    """Crea la tabla de hechos de Envíos."""
+    fact_cols = [
+        'shipment_id', 'order_id', 'carrier', 'tracking_number', 'status', 
+        'shipped_at', 'delivered_at'
+    ]
+    return df_shipment[fact_cols].copy()
+
+def build_fact_web_session(df_session):
+    """Crea la tabla de hechos de Sesiones Web."""
+    fact_cols = [
+        'session_id', 'customer_id', 'started_at', 'ended_at', 'source', 'device'
+    ]
+    return df_session[fact_cols].copy()
 
 def build_fact_nps(df_nps):
-    """Crea la tabla de hechos de NPS, lista para el dashboard."""
-    fact_nps = df_nps.copy()
-    
-    # 1. Convertir fecha
-    fact_nps['date'] = pd.to_datetime(fact_nps['responded_at']).dt.date
-    
-    # 2. Clasificar Score
-    def classify_nps(score):
-        if score >= 9: return 'Promotor'
-        elif score >= 7: return 'Pasivo'
-        else: return 'Detractor'
-    
-    fact_nps['nps_category'] = fact_nps['score'].apply(classify_nps)
-    
-    # 3. Seleccionar columnas
-    fact_nps = fact_nps[['nps_id', 'date', 'channel_id', 'score', 'nps_category']]
-    return fact_nps
-
-def build_fact_users(df_sessions):
-    """Crea la tabla de hechos de Usuarios Activos, lista para el dashboard."""
-    fact_users = df_sessions.copy()
-    
-    # 1. Convertir fecha
-    fact_users['date'] = pd.to_datetime(fact_users['started_at']).dt.date
-    
-    # 2. Crear 'user_key' único (como hicimos antes)
-    fact_users['user_key'] = 'anon_' + fact_users['session_id'].astype(str)
-    fact_users.loc[fact_users['customer_id'].notna(), 'user_key'] = \
-        'user_' + fact_users['customer_id'].astype(str)
-        
-    # 3. Seleccionar columnas
-    fact_users = fact_users[['session_id', 'date', 'user_key']]
-    return fact_users
+    """Crea la tabla de hechos de Respuestas NPS."""
+    fact_cols = [
+        'nps_id', 'customer_id', 'channel_id', 'score', 'comment', 'responded_at'
+    ]
+    return df_nps[fact_cols].copy()
