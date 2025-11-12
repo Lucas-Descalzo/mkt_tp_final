@@ -208,10 +208,10 @@ El tablero interactivo de **Power BI** fue construido a partir de las tablas del
 -  **Ventas por Provincia**
 -  **Ranking Mensual por Producto**
 
-🔗 **Acceso al Dashboard Online:**  
-👉 [Ver en Power BI (versión pública)](https://app.powerbi.com/view?r=eyJrIjoiNWVkMTM2MGEtOWUxZi00YzhkLTg1ZGMtODc0MTg0OTU2YWYzIiwidCI6IjNlMDUxM2Q2LTY4ZmEtNDE2ZS04ZGUxLTZjNWNkYzMxOWZmYSIsImMiOjR9&pageName=aa33514ebd583fcbb0eb)
+ **Acceso al Dashboard Online:**  
+ [Ver en Power BI (versión pública)](https://app.powerbi.com/view?r=eyJrIjoiNWVkMTM2MGEtOWUxZi00YzhkLTg1ZGMtODc0MTg0OTU2YWYzIiwidCI6IjNlMDUxM2Q2LTY4ZmEtNDE2ZS04ZGUxLTZjNWNkYzMxOWZmYSIsImMiOjR9&pageName=aa33514ebd583fcbb0eb)
 
-🧩 **Archivo local (.pbix):**  
+ **Archivo local (.pbix):**  
 El archivo se encuentra disponible en el repositorio para su consulta o apertura local en Power BI Desktop:
 
 dashboard/
