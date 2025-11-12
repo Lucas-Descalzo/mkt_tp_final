@@ -4,6 +4,7 @@
 
 Proyecto final de "Introducción al Marketing Online y los Negocios Digitales". El objetivo es implementar un pipeline de ETL (Extract, Transform, Load) que toma datos crudos de la empresa, los modela en una Constelación de Hechos (Esquema Estrella) y los carga en un Data Warehouse (carpeta `DW/`) listo para ser analizado y visualizado en PowerBI.
 
+
 ---
 
 ## 0. Contenidos
@@ -15,6 +16,7 @@ Proyecto final de "Introducción al Marketing Online y los Negocios Digitales". 
 5.  [Estructura del Repositorio y Pipeline](#5-estructura-del-repositorio-y-pipeline)
 6.  [Instrucciones de Ejecución](#6-instrucciones-de-ejecución)
 7.  [KPIs del Dashboard](#7-kpis-del-dashboard)
+8. [Dashboard Power BI](#8-dashboard-power-bi--análisis-de-rendimiento-comercial-ecobottle-ar)
 
 ---
 
@@ -192,3 +194,30 @@ Los archivos `.csv` generados en `DW/` son la fuente de datos para el dashboard 
 * **NPS (ptos.)**
 * **Ventas por Provincia**
 * **Ranking Mensual por Producto**
+
+---
+
+## 8. Dashboard Power BI — Análisis de Rendimiento Comercial (EcoBottle AR)
+
+El tablero interactivo de **Power BI** fue construido a partir de las tablas del *Data Warehouse (DW/)* y refleja las métricas clave solicitadas en la consigna:  
+
+-  **Ventas Totales**
+-  **Ticket Promedio**
+-  **Usuarios Activos**
+-  **NPS**
+-  **Ventas por Provincia**
+-  **Ranking Mensual por Producto**
+
+🔗 **Acceso al Dashboard Online:**  
+👉 [Ver en Power BI (versión pública)](https://app.powerbi.com/view?r=eyJrIjoiNWVkMTM2MGEtOWUxZi00YzhkLTg1ZGMtODc0MTg0OTU2YWYzIiwidCI6IjNlMDUxM2Q2LTY4ZmEtNDE2ZS04ZGUxLTZjNWNkYzMxOWZmYSIsImMiOjR9&pageName=aa33514ebd583fcbb0eb)
+
+🧩 **Archivo local (.pbix):**  
+El archivo se encuentra disponible en el repositorio para su consulta o apertura local en Power BI Desktop:
+
+dashboard/
+├── Dashboard_EcoBottle_AR.pbix
+└── dashboard_preview.png
+
+*En caso de no poder acceder al enlace público, puede abrirse el archivo `.pbix` directamente en Power BI Desktop.*
+
+![Vista previa del Dashboard](dashboard/dashboard_preview.png)
